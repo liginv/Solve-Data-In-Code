@@ -3,27 +3,29 @@
 Computers [communicate](./information.md) to reach a goal. For instance, you
 contact Youtube to see cat videos, Youtube responds to gain advertising revenue.
 
-A **network** is a graph where vertices are processing machines and edges are
-transmission links. Examples include the Internet, telephones, walkie-talkies.
+A **network** can be represented with a graph where vertices are processing 
+machines and edges are transmission links. Examples of networks include the 
+Internet, telephones, and walkie-talkies.
 
 ## Protocols
 
-Fundamentally, signals are transmitted through space. Standards set the way in
-which information goes through, first as bits, then as higher-level concepts.
-Standards can depend on the existence of a lower-level standard, forming a
-*protocol stack*. The **OSI model** is a theoretical stack with the following
-layers:
+Certain documents (typically, standards and Requests For Comments (RFCs)) set
+the way in which information is transmitted through the network, first as bits,
+then as higher-level concepts. They can depend on the existence of lower-level
+protocols, forming a *protocol stack*. The **OSI model** theorizes the layers
+that a protocol stack is made of:
 
-- Physical: transmission of bits through space (eg: 100BASE-TX (ethernet)),
-- Data link: transmission of frames between adjacent nodes, to determine the
-  start and end of messages (eg: MAC, PPP),
+- Physical: transmission of bits through a medium (eg: Ethernet PHY chip for
+  100BASE-TX),
+- Data link: transmission of frames mostly between adjacent nodes, to determine
+  the start and end of messages (eg: MAC, PPP),
 - Network: transmission of packets for routing across the graph (eg: IP),
 - Transport: transmission of segments, so applications on both endpoints can
   exchange messages with given reliability guarantees (eg: TCP, UDP, ICMP
   (ping)),
-- Session: recognition of endpoints across messages,
+- Session: setup and recognition of endpoints across messages,
 - Presentation: encoding of data (charset, compression, encryption) (eg: TLS,
-  MIME, to a limited extent),
+  HTTP with MIME to some extent),
 - Application: serialization of data structures (eg: HTTP (documents), NTP
   (time), SMTP (email), FTP (file)).
 
@@ -31,9 +33,9 @@ Let's focus on a typical stack.
 
 ### HTTP
 
-**HyperText Transfer Protocol** ([HTTP][]) is an application-layer protocol designed
-for client-server document transmission. For instance, to request the main page
-of an HTTP server on your computer:
+**HyperText Transfer Protocol** ([HTTP][]) is an application-layer and
+presentation-layer protocol designed for client-server document transmission.
+For instance, to request the main page of an HTTP server on your computer:
 
     GET / HTTP/1.1
     Host: localhost:1234
@@ -62,17 +64,17 @@ newlines). The server may respond:
 
     0
 
-This response includes an [HTML][] file that the HTTP client (usually, a browser,
-like Firefox or Google Chrome) will read as instructions on how to lay out a
-page, which determines the pixels to display, the animations to show, the
+This response includes an [HTML][] file that the HTTP client (for instance, a
+browser, like Firefox or Google Chrome) will read as instructions on how to lay
+out a page, which determines the pixels to display, the animations to show, the
 interactions to execute when the user moves or clicks the mouse, the sounds to
 play, etc.
 
 [HTML]: https://html.spec.whatwg.org/multipage/
 
 All requests have a first line with a method (`GET`), a path (`/`), and a
-protocol (`HTTP/1.1`), followed by headers mapping header names (`Accept`) to
-their value (`text/html`). Requests may also carry data.
+protocol (`HTTP/1.1`), optionally followed by headers mapping header names
+(`Accept`) to their value (`text/html`). Requests may also carry data.
 
 Responses have a first line with a protocol (`HTTP/1.1`), a code (`200 OK`;
 codes starting with 1 are informational, 2 for success, 3 for redirection, 4 for
@@ -84,9 +86,8 @@ session information (through cookies) and so on.
 As mentioned, HTTP includes presentation-layer "protocols" in headers, such as
 **Multipurpose Internet Mail Extensions** ([MIME][]) in `Content-Type`, to
 specify the file `<type>/<subtype>` (eg. `text/plain`), or whether it
-recursively contains subfiles with `multipart/mixed` or
-[`multipart/form-data`][form-data], with each subfile specifying their own
-headers:
+recursively contains subfiles with [`multipart/form-data`][form-data], with each
+subfile specifying their own headers:
 
     POST /upload HTTP/1.1
     Host: localhost:1234
@@ -122,16 +123,16 @@ be replaced by the binary data directly.)
 [MIME]: https://tools.ietf.org/html/rfc2045
 [form-data]: https://tools.ietf.org/html/rfc7578
 
-HTTPS is similar to HTTP, except that the whole data stream, including headers,
-is encrypted to prevent intermediate nodes on the network from reading or
-modifying the content, which is necessary when transmitting identification
-or banking information, and to avoid being fooled into performing dangerous
-acts.
+HTTPS is HTTP transmitted over a TLS connection: all the HTTP data, including
+headers, is encrypted to prevent intermediate nodes on the network from reading
+or modifying the content, which is necessary when transmitting identification or
+banking information, and to avoid being fooled into performing dangerous acts.
 
 ### TCP
 
 **Transmission Control Protocol** ([TCP][]) is a transport-layer protocol to
-ensure that segments are received without errors in the order they were sent.
+ensure that all sent segments are received uncorrupted in the same order. That
+is achieved by reordering received segments and resending corrupted ones.
 When using IP, it cuts its segments into pieces that fit in a packet.
 
 1. The server starts to listen to a port.
@@ -143,19 +144,20 @@ When using IP, it cuts its segments into pieces that fit in a packet.
    have been received in order.
 6. The client sends a FIN.
 7. The server sends a FIN+ACK (or an ACK followed by a FIN).
-8. The client sends an ACK.
+8. The client sends an ACK. (The connection stays open until it times out.)
 
 A TCP header includes:
 
 - source port in 2 bytes,
 - destination port in 2 bytes,
 - sequence number in 4 bytes:
-  - in a SYN, this is the client Initial Sequence Number (ISN) randomly picked,
+  - in a SYN, this is the client Initial Sequence Number (ISN), picked usually
+    randomly,
   - otherwise it is (server ISN) + 1 + number of bytes previously sent, ensuring
     that packets can be reordered to obtain the original segment.
 - acknowledgement number in 4 bytes:
   - in a SYN-ACK, this is (client ISN) + 1, and the server sequence number is
-    randomly picked,
+    picked.
   - in an ACK, this is (server ISN) + number of bytes received + 1, which is the
     expected next sequence number to be received from the server.
 - data offset in 4 bits, the size of the TCP header in 32-bit words (defaults to
@@ -181,6 +183,8 @@ A TCP header includes:
 packets go to their destination despite having to transit through several
 machines on the way.
 It also cuts the packets into fragments that fit in the link-layer frame.
+There are two major versions of IP in use: IPv4 is the most used, and is slowly
+replaced by IPv6.
 
 IPv4 headers have the following fields:
 
@@ -195,7 +199,7 @@ IPv4 headers have the following fields:
 - 0 in 1 bit,
 - Don't Fragment (DF) in 1 bit, if the packet can be fragmented,
 - Multiple Fragments (Mf) in 1 bit, if the rest of the packet is in subsequent
-  framgents,
+  fragments,
 - fragment offset in 13 bits, identifying the position of the fragment in the
   packet,
 - Time To Live (TTL) in 1 byte: the number of remaining nodes in the network
@@ -212,38 +216,44 @@ where the packet must be transmitted over a link which cannot hold the whole
 packet (typically, the maximum Ethernet frame size, or when the destination
 doesn't have enough memory to hold the packet).
 
-However, TCP can cut its data into arbitrarily sized packets to fit in an
-Ethernet frame, and fragmentation decreases security as the tail fragments don't
-hold the TCP segment headers. Besides, Path MTU (Maximum Transportation Unit)
-Discovery (PMTUD) allows determining the size of the physical-layer frame in a
-path through the network. As a result, IPv6 disallows fragmenting packets
-within the path, requiring the sender to either form its packets at the right
-size (for TCP), or to form its fragments at the right size (for UDP and ICMP,
-which cannot cut their data into multiple packets).
+However, TCP can cut its segments into arbitrarily sized packets to fit in an
+Ethernet frame, and fragmentation makes packet analysis harder as the tail
+fragments don't hold the TCP segment headers. Besides, Path MTU (Maximum
+Transportation Unit) Discovery (PMTUD) allows determining the size of the
+physical-layer frame in a path through the network. As a result, IPv6 disallows
+fragmenting packets within the path, requiring the sender to either form its
+packets at the right size (for TCP), or to form its fragments at the right size
+(for UDP and ICMP, which cannot cut their data into multiple packets).
 
 Note that packets can be lost, duplicated, received out of order, or corrupted
 without the IP layer noticing. It is up to TCP to prevent that from happening.
 
 IP addresses segment the network into increasingly smaller subnetworks, with
-**routers** processing packets in and across networks. They can be manually set
-or gained from the **Dynamic Host Configuration Protocol** (DHCP).
+**routers** processing packets in and across networks. They can be gained from
+the **Dynamic Host Configuration Protocol** (DHCP), auto-assigned, or manually
+set.
 
-IPv4 addresses weigh 4 bytes, commonly written in dot-separated decimal, eg.
+IPv4 addresses fit in 4 bytes, commonly written in dot-separated decimal, eg.
 `172.16.254.1`. To denote a subnetwork (which has adjacent numbers), we use
-Classless Inter-Domain Routing (CIDR) notation: `<first address>/<number of
-leading bits that stay the same for all addresses>`. For instance,
-192.168.2.0/24 includes addresses from 192.168.2.0 to 192.168.2.255. There are
-special ranges of addresses:
+Classless Inter-Domain Routing (CIDR) notation: `<network address>/<bitmask
+(number of leading bits that stay the same for all addresses)>`. For instance,
+192.168.2.0/24 includes addresses from 192.168.2.0 to 192.168.2.255, although
+you cannot use the address ending in .0 (network address), used to identify the
+network, nor that ending in .255 (broadcast address), used to broadcast to all
+devices on the network.
 
-- 10.0.0.0/8 for large private networks (ie, not accessible across the Internet;
-  they are typically behind a Network Address Translator (NAT)),
-- 172.16.0.0/12 for medium private networks,
-- 192.168.0.0/16 for small private networks,
-- 0.0.0.0/8 for the current network,
-- 100.64.0.0/10 for machines doing Internet Service Provider interconnection,
+There are special ranges of addresses:
+
+- 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16 for private networks (ie,
+  not globally routable; they are typically behind a Network Address Translator
+  (NAT)),
+- 0.0.0.0/8 for "no address", used as source address when getting an IP address,
+- 100.64.0.0/10 "shared address space", similar to private networks, but for
+  Carrier-Grade NAT (CGN),
 - 127.0.0.0/8 for loopback (sending network data within a single node), most
-  notably 127.0.0.1 refers to localhost,
-- 169.254.0.0/16 for IP assignment between link-local nodes to bootstrap DHCP,
+  notably 127.0.0.1 (which the localhost hostname usually resolves to),
+- 169.254.0.0/16 for IP assignment between link-local, autoconf/zeroconf
+  addresses,
 - 192.0.0.0/24 for IANA,
 - 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 are reserved for testing and
   examples in documentation,
@@ -253,12 +263,12 @@ special ranges of addresses:
 - 240.0.0.0/4 blocked for historical reasons,
 - 255.255.255.255 for broadcast.
 
-IPv6 addresses weigh 16 bytes, with pairs of bytes represented as
-colon-separated hexadecimal numbers, with zeros optionally replaced once by a
-double colon. They can be:
+IPv6 addresses fit in 16 bytes, with pairs of bytes represented as
+colon-separated hexadecimal numbers, with adjacent zeros replaced by `::` once
+in the address.
 
 - unicast has a ≥ 48-bit routing prefix, a ≤ 16-bit subnet id defined by the
-  network administrator, and a 64-bit interface identifier defined either by
+  network administrator, and a 64-bit interface identifier obtained either by
   DHCPv6, the MAC address, random, or manually.
 - :: for unspecified address.
 - ::1 for localhost,
@@ -291,9 +301,9 @@ double colon. They can be:
 - 0100::/64 to discard traffic.
 
 Some IP addresses can be mapped to a name (eg, `en.wikipedia.org` →
-91.198.174.192) by using the **Domain Name System** (DNS), which synchronizes
-and resolves domain names. Companies that can allocate a new domain name are
-called **registrars**. They publish their information as zone files, and allow
+91.198.174.192) by using the **Domain Name System** (DNS), a naming system for
+Internet entities. Companies that can allocate a new domain name are called
+**registrars**. They publish their information as zone files, and allow
 authenticated editing of those files by the domain name owners as part of a
 business arrangement.
 
@@ -317,8 +327,8 @@ interchangeable.*
 
 ### Ethernet
 
-At the link layer, communication only happens directly between two machines;
-there are no intermediate nodes in the graph.
+At the link layer, communication mostly happens directly between two adjacent
+nodes.
 
 Among link-layer protocols, **Ethernet** (aka. LAN, IEEE 802.3) is a link-layer
 protocol for transiting frames through a wire between two machines. A frame
@@ -342,8 +352,8 @@ includes:
   IPv6); if the value is < 1536, it represents the payload size in bytes,
 - payload: up to 1500 bytes of data from the layer above, typically IP,
 - Frame Check Sequence (FCS, implemented using a **Cyclic-Redundancy Check**
-  (CRC)): 4 bytes that verify that the frame is not corrupted; if it is, it must
-  be ignored and re-sent.
+  (CRC)): 4 bytes that verify that the frame is not corrupted; if it is, it is
+  dropped and upper layers may have to re-send it.
 - Interpacket gap: not really part of the frame, those 12 bytes of idle line
   transmission are padding to avoid having frames right next to each other.
 
